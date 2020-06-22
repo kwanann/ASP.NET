@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <system.webServer>
+        <httpRedirect enabled="false" />
+        <rewrite>
+            <rules>
+                <rule name="CSRF" enabled="true" patternSyntax="ECMAScript" stopProcessing="true">
+                    <match url=".*" />
+                    <conditions>
+                        <add input="{HTTP_REFERER}" pattern="^$" negate="true" />
+                        <add input="{HTTP_REFERER}" pattern="https://[url]/.*" negate="true" />
+                        <add input="{HTTP_REFERER}" pattern="http://[url]/.*" negate="true" />
+                    </conditions>
+                    <action type="CustomResponse" statusCode="403" statusReason="Forbidden: Access is denied." statusDescription="You do not have permission to view this directory or page using the credentials that you supplied." />
+                </rule>
+            </rules>
+			<outboundRules>
+			  <rule name="Use only secure cookies" preCondition="Unsecured cookie" enabled="true">
+				   <match serverVariable="RESPONSE_SET_COOKIE" pattern=".*" negate="false" />
+				   <action type="Rewrite" value="{R:0}; secure" />
+			  </rule>
+			  <rule name="Remove Server header">
+				   <match serverVariable="RESPONSE_Server" pattern=".+" />
+				   <action type="Rewrite" value="" />
+			  </rule>
+        <rule name="AddSameSiteCookieFlag" enabled="true">
+           <match serverVariable="RESPONSE_Set-Cookie" pattern="^(.*)([ASPNETSESSIONID])(=.*)$" />
+           <action type="Rewrite" value="{R:0};SameSite=lax" />
+        </rule>
+			  <preConditions>
+				<preCondition name="Unsecured cookie">
+				  <add input="{RESPONSE_SET_COOKIE}" pattern="." />
+				  <add input="{RESPONSE_SET_COOKIE}" pattern="; secure" negate="true" />
+				</preCondition>
+			  </preConditions>
+			</outboundRules>
+        </rewrite>
+		<httpProtocol>
+        <customHeaders>
+            <remove name="X-Powered-By" />
+			<remove name="Server" />
+			<add name="Strict-Transport-Security" value="max-age=31536000; includeSubDomains" />
+                <add name="X-FRAME-OPTIONS" value="SAME-ORIGIN" />
+        </customHeaders>
+    </httpProtocol>
+    </system.webServer>
+    <system.web>
+        <httpCookies httpOnlyCookies="true" requireSSL="true" />
+    </system.web>
+
+
+</configuration>
